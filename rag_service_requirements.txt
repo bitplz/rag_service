@@ -1,0 +1,11 @@
+transformers>=4.52.0
+torch>=2.6.0
+peft>=0.15.2 
+torchvision 
+pillow
+pymupdf4llm
+torchao>0.16.0
+sentence_transformers
+einops
+nltk
+qdrant_client

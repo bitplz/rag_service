@@ -2,13 +2,12 @@ import os
 
 os.environ["HF_HOME"] = "./hf_cache"
 os.environ["SENTENCE_TRANSFORMERS_HOME"] = "./hf_cache"
-os.environ["HF_HUB_OFFLINE"] = "0"  # switch to "1" after first download
+os.environ["HF_HUB_OFFLINE"] = "0"
 
 from huggingface_hub import snapshot_download
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import torch
 
-HF_TOKEN = "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"
 EMBEDDING_MODEL_ID = "jinaai/jina-embeddings-v5-text-nano"
 RERANKING_MODEL_ID = "BAAI/bge-reranker-v2-m3"
 EMBEDDING_MODEL_PATH = "./hf_cache/embedding_model"
@@ -18,7 +17,8 @@ embedding_model = None
 re_ranking_model = None
 
 
-def ensure_models_downloaded():
+def ensure_models_downloaded(hf_token: str = None):
+    print("ensuring init")
     """Run once to download models. Skips if already present."""
     os.makedirs("./hf_cache", exist_ok=True)
 
@@ -29,8 +29,8 @@ def ensure_models_downloaded():
             repo_type="model",
             local_dir=EMBEDDING_MODEL_PATH,
             revision="refs/pr/11",
-            token=HF_TOKEN,
-            ignore_patterns=["*.msgpack", "*.h5", "flax_model*"],  # skip unused formats
+            token=hf_token,
+            ignore_patterns=["*.msgpack", "*.h5", "flax_model*"],
         )
         print(f"Embedding model saved to {EMBEDDING_MODEL_PATH}")
     else:
@@ -42,15 +42,16 @@ def ensure_models_downloaded():
             repo_id=RERANKING_MODEL_ID,
             repo_type="model",
             local_dir=RERANKING_MODEL_PATH,
-            token=HF_TOKEN,
-            ignore_patterns=["*.msgpack", "*.h5", "flax_model*"],  # skip unused formats
+            token=hf_token,
+            ignore_patterns=["*.msgpack", "*.h5", "flax_model*"],
         )
         print(f"Reranking model saved to {RERANKING_MODEL_PATH}")
     else:
         print("Reranking model already downloaded, skipping.")
 
 
-def init_models():
+def init_models(hf_token: str = None):
+    print("models init")
     global embedding_model, re_ranking_model
 
     ensure_models_downloaded()
@@ -88,15 +89,15 @@ def init_models():
     print(f"All models ready on {device}.")
 
 
-def get_embedding_model() -> SentenceTransformer:
+def get_embedding_model(hf_token: str = None) -> SentenceTransformer:
     global embedding_model
     if embedding_model is None:
-        init_models()
+        init_models(hf_token=hf_token)
     return embedding_model
 
 
-def get_reranking_model() -> CrossEncoder:
+def get_reranking_model(hf_token: str = None) -> CrossEncoder:
     global re_ranking_model
     if re_ranking_model is None:
-        init_models()
+        init_models(hf_token=hf_token)
     return re_ranking_model

@@ -8,19 +8,19 @@ em = None
 rm = None
 
 class RagService:
-    
+
     @classmethod
-    def init_controller():
+    def init_controller(cls, hf_token: str = None):
         global client, em, rm
 
         client = get_qdrant_client()
-        em = get_embedding_model()
-        rm = get_reranking_model()
+        em = get_embedding_model(hf_token=hf_token)
+        rm = get_reranking_model(hf_token=hf_token)
 
         nltk.download('punkt_tab')
 
     @classmethod
-    def check_controllers() -> bool:
+    def check_controllers(cls) -> bool:
         global client, em, rm
 
         if not client or not em or not rm:
@@ -29,13 +29,11 @@ class RagService:
         else: return True
 
     @classmethod
-    def create_chunks(pdf_path: str):
-        global em
-        print(f"EM: {em}")
+    def create_chunks(cls, pdf_path: str):
         if not RagService.check_controllers(): return
 
         print("\n\nGenerating markdown from pdf....\n")
-        md_text = create_markdown_from_pdf(pdf_path)
+        md_text = create_markdown_from_pdf(path=pdf_path)
 
 
         print("\n\nCreating chunks....\n")
@@ -45,7 +43,7 @@ class RagService:
         return final_chunks
 
     @classmethod
-    def embed_and_store_chunks(collection: str, chunks: list[dict]):
+    def embed_and_store_chunks(cls, collection: str, chunks: list[dict]):
         global client, em
 
         if not RagService.check_controllers(): return
@@ -54,25 +52,9 @@ class RagService:
         embed_and_store(final_chunks=chunks, collection=collection, embedding_model=em, client=client)
 
     @classmethod
-    def get_context(query: str, collection: str) -> str:
+    def get_context(cls, query: str, collection: str) -> str:
         global client, em, rm
-        
+
         if not RagService.check_controllers(): return
-        
+
         return run_query(query=query, embedding_model=em, re_ranking_model=rm, client=client, collection=collection)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

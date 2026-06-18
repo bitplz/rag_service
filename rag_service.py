@@ -43,13 +43,13 @@ class RagService:
         return final_chunks
 
     @classmethod
-    def embed_and_store_chunks(cls, collection: str, chunks: list[dict]):
+    def embed_and_store_chunks(cls, collection: str, chunks: list[dict], metadata: dict = None):
         global client, em
 
         if not RagService.check_controllers(): return
 
         print("\n\nEmbedding & Storing chunks....\n")
-        embed_and_store(final_chunks=chunks, collection=collection, embedding_model=em, client=client)
+        embed_and_store(final_chunks=chunks, collection=collection, embedding_model=em, client=client, metadata=metadata)
 
     @classmethod
     def get_context(cls, query: str, collection: str) -> str:

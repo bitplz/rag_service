@@ -56,7 +56,7 @@ def create_final_chunks(chunks: list[dict]):
     return final_chunks
 
 
-def embed_and_store(final_chunks: list[dict], collection: str, embedding_model, client):
+def embed_and_store(final_chunks: list[dict], collection: str, embedding_model, client, metadata: dict=None):
 
     texts_to_embed = [f"{c['title']}\n\n{c['text']}" for c in final_chunks]
     embeddings = embedding_model.encode(
@@ -79,7 +79,7 @@ def embed_and_store(final_chunks: list[dict], collection: str, embedding_model, 
         PointStruct(
             id=str(uuid.uuid4()),
             vector=embeddings[i].tolist(),
-            payload={"text": texts_to_embed[i]}
+            payload={"text": texts_to_embed[i], "chunk_index": i, **metadata}
         )
         for i, _ in enumerate(final_chunks)
     ]
@@ -92,7 +92,28 @@ def embed_and_store(final_chunks: list[dict], collection: str, embedding_model, 
     print(f"Text embedded and stored in `{collection}` collection!")
 
 
-def run_query(query: str, embedding_model, re_ranking_model, client, collection: str):
+
+def build_filter(metadata: dict):
+    must_conditions = []
+
+    for key, value in metadata.items():
+        must_conditions.append({
+            "key": key,
+            "match": {
+                "value": value
+            }
+        })
+
+    return {"must": must_conditions}
+
+
+
+def run_query(query: str, embedding_model, re_ranking_model, client, collection: str, metadata: dict=None):
+
+    filter = {}
+
+    if metadata:
+        filter = build_filter(metadata=metadata) 
 
     query_embedding = embedding_model.encode(
         sentences=[query],
@@ -105,6 +126,7 @@ def run_query(query: str, embedding_model, re_ranking_model, client, collection:
         collection_name=collection,
         query=query_embedding[0].tolist(),
         limit=20,
+        filter=filter
     )
 
     top20 = [

@@ -40,9 +40,9 @@ Final Answer:
   """
 
 
-def create_chunks_and_embed(pdf_path: str, collection: str):
+def create_chunks_and_embed(pdf_path: str, collection: str, metadata: dict = None):
     chunks = service.create_chunks(pdf_path=pdf_path)
-    service.embed_and_store_chunks(collection=collection, chunks=chunks)
+    service.embed_and_store_chunks(collection=collection, chunks=chunks, metadata=metadata)
 
 def ask(query: str, collection: str):
     context = service.get_context(query=query, collection=collection)
@@ -61,5 +61,12 @@ def run():
     query = "can company save my personal and where it will be used for?"
     collection = "policy"
 
-    create_chunks_and_embed(pdf_path=pdf_path, collection=collection)
+    metadata = {
+        "doc_type": "hr",
+        "department": "hr",
+        "source": pdf_path,
+        "collection": collection
+    }
+
+    create_chunks_and_embed(pdf_path=pdf_path, collection=collection, metadata=metadata)
 

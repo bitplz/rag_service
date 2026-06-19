@@ -3,6 +3,7 @@ import pymupdf4llm
 from nltk.tokenize import sent_tokenize
 from qdrant_client.models import PointStruct, Distance, VectorParams
 import uuid
+from qdrant_client import models
 
 def chunk_by_headings(md_text: str) -> list[dict]:
    """Split markdown into chunks at heading boundaries."""
@@ -65,7 +66,7 @@ def embed_and_store(final_chunks: list[dict], collection: str, embedding_model, 
         show_progress_bar=True,
     )
 
-    
+
     if not client.collection_exists(collection):
         client.create_collection(
             collection_name=collection,
@@ -92,28 +93,29 @@ def embed_and_store(final_chunks: list[dict], collection: str, embedding_model, 
     print(f"Text embedded and stored in `{collection}` collection!")
 
 
-
 def build_filter(metadata: dict):
-    must_conditions = []
+    conditions = []
 
     for key, value in metadata.items():
-        must_conditions.append({
-            "key": key,
-            "match": {
-                "value": value
-            }
-        })
+        if value is not None:
+            conditions.append(
+                models.FieldCondition(
+                    key=key,
+                    match=models.MatchValue(value=value)
+                )
+            )
 
-    return {"must": must_conditions}
+    return conditions
+
 
 
 
 def run_query(query: str, embedding_model, re_ranking_model, client, collection: str, metadata: dict=None):
 
-    filter = {}
+    filter = []
 
     if metadata:
-        filter = build_filter(metadata=metadata) 
+        filter = build_filter(metadata=metadata)
 
     query_embedding = embedding_model.encode(
         sentences=[query],
@@ -126,7 +128,7 @@ def run_query(query: str, embedding_model, re_ranking_model, client, collection:
         collection_name=collection,
         query=query_embedding[0].tolist(),
         limit=20,
-        filter=filter
+        query_filter=models.Filter(must=filter)
     )
 
     top20 = [
